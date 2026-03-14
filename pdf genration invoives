@@ -1,0 +1,100 @@
+import os
+from datetime import datetime
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+# -------------------------------
+# Function to generate invoice text
+# -------------------------------
+def generate_invoice_text(customer_name, items, output_dir="invoices"):
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"{output_dir}/invoice_{customer_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+    total_amount = sum(qty * price for _, qty, price in items)
+
+    with open(filename, "w") as f:
+        f.write("===== INVOICE =====\n")
+        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Customer: {customer_name}\n")
+        f.write("-------------------\n")
+        f.write(f"{'Item':20} {'Qty':>5} {'Price':>10} {'Total':>10}\n")
+        f.write("-" * 50 + "\n")
+        for item, qty, price in items:
+            f.write(f"{item:20} {qty:>5} {price:>10.2f} {qty*price:>10.2f}\n")
+        f.write("-" * 50 + "\n")
+        f.write(f"{'TOTAL':>37} {total_amount:>10.2f}\n")
+        f.write("===================\n")
+
+    print(f"Text invoice saved: {filename}")
+    return filename
+
+
+# -------------------------------
+# Function to generate invoice PDF
+# -------------------------------
+def generate_invoice_pdf(customer_name, items, output_dir="invoices"):
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"{output_dir}/invoice_{customer_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+    total_amount = sum(qty * price for _, qty, price in items)
+
+    c = canvas.Canvas(filename, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(200, y, "INVOICE")
+    y -= 30
+
+    c.setFont("Helvetica", 10)
+    c.drawString(50, y, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    y -= 15
+    c.drawString(50, y, f"Customer: {customer_name}")
+    y -= 30
+
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, y, "Item")
+    c.drawString(250, y, "Qty")
+    c.drawString(300, y, "Price")
+    c.drawString(370, y, "Total")
+    y -= 15
+    c.line(50, y, 500, y)
+    y -= 15
+
+    c.setFont("Helvetica", 10)
+    for item, qty, price in items:
+        c.drawString(50, y, item)
+        c.drawString(250, y, str(qty))
+        c.drawString(300, y, f"{price:.2f}")
+        c.drawString(370, y, f"{qty * price:.2f}")
+        y -= 15
+
+    y -= 10
+    c.line(50, y, 500, y)
+    y -= 20
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(300, y, "TOTAL:")
+    c.drawString(370, y, f"{total_amount:.2f}")
+
+    c.showPage()
+    c.save()
+
+    print(f"PDF invoice saved: {filename}")
+    return filename
+
+
+# -------------------------------
+# Example usage
+# -------------------------------
+if __name__ == "__main__":
+    # Example data
+    customer = "John_Doe"
+    purchased_items = [
+        ("Apples", 3, 50.0),
+        ("Bananas", 2, 30.0),
+        ("Milk", 1, 45.0)
+    ]
+
+    # Generate invoices
+    txt_file = generate_invoice_text(customer, purchased_items)
+    pdf_file = generate_invoice_pdf(customer, purchased_items)
